@@ -2,4 +2,5 @@
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
     <cache-path name="art_launcher_files" path="art-launchers/" />
     <files-path name="exports" path="exports/" />
+    <files-path name="artwork" path="artwork/" />
 </paths>

@@ -10,9 +10,17 @@ catalog for MCON and launches individual games in:
 It stores only launch metadata and cached artwork. It never writes emulator
 saves or modifies game folders.
 
-## Status
+## What works
 
-Initial implementation is in progress on `feat/initial-implementation`.
+- Add an Azahar game manually by its 16-character title ID or bulk-import a
+  schema-1 Azahar JSON export.
+- Import one or more Artemis `.art` launcher files.
+- Read-only scan of the exact `/storage/emulated/0/Kirin/games` folder selected
+  with Android's system folder picker.
+- Stable per-game launch links, backup/restore, local cover selection, and
+  online cover search through GameTDB and SteamGridDB.
+- MCON-targeted bulk sharing when MCON advertises the public bridge MIME type,
+  with a share-sheet and copy-link fallback when it does not.
 
 ## Launch contract
 
@@ -33,12 +41,29 @@ paths and Artemis host identifiers are never exposed in the MCON URL.
   folder selected by the user and sends Kirin its supported shortcut intent.
 - Back up `/storage/emulated/0/Kirin` before first-device compatibility tests.
 
+Removing a game from MCON Bridge deletes only its catalog row. It never deletes
+a ROM, streamed app, emulator configuration, or save file.
+
+## Setup
+
+1. Install MCON Bridge and the matching emulator app.
+2. Use **Add Azahar**, **Azahar export**, **Artemis .art**, or **Scan Kirin**.
+3. Optionally choose local art or search online. GameTDB works from an exact 3DS
+   product code; SteamGridDB requires your own API key, which is encrypted with
+   Android Keystore.
+4. Tap **Export to MCON**. If your MCON build does not advertise the bulk-import
+   MIME type, use the per-game copy button and paste the stable link into MCON.
+
+See [compatibility details](docs/COMPATIBILITY.md), the
+[Azahar export schema](docs/AZAHAR_EXPORT_FORMAT.md), and the
+[MCON handoff schema](docs/MCON_IMPORT_FORMAT.md).
+
 ## Building
 
 Install Android SDK 36 and JDK 17, then run:
 
 ```bash
-./gradlew test assembleDebug
+./gradlew testDebugUnitTest lintDebug assembleDebug
 ```
 
 ## License

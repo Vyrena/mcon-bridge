@@ -1,56 +1,56 @@
 package com.vyrena.mconbridge
 
+import android.content.Intent
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
+import androidx.activity.viewModels
+import androidx.lifecycle.lifecycleScope
+import com.vyrena.mconbridge.domain.BridgeLink
+import com.vyrena.mconbridge.domain.LaunchResult
+import com.vyrena.mconbridge.ui.BridgeApp
+import com.vyrena.mconbridge.ui.BridgeEvent
+import com.vyrena.mconbridge.ui.BridgeTheme
+import com.vyrena.mconbridge.ui.BridgeViewModel
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
+    private val viewModel: BridgeViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { BridgeTheme { BridgeHomePlaceholder() } }
+        setContent { BridgeTheme { BridgeApp(viewModel) } }
+        lifecycleScope.launch {
+            viewModel.events.collectLatest { event ->
+                when (event) {
+                    is BridgeEvent.Message -> Toast.makeText(this@MainActivity, event.text, Toast.LENGTH_LONG).show()
+                    is BridgeEvent.StartIntent -> runCatching { startActivity(event.intent) }
+                        .onFailure { Toast.makeText(this@MainActivity, it.message ?: "No compatible app found", Toast.LENGTH_LONG).show() }
+                }
+            }
+        }
+        handleDeepLink(intent)
     }
-}
 
-@Composable
-private fun BridgeTheme(content: @Composable () -> Unit) {
-    MaterialTheme(
-        colorScheme = MaterialTheme.colorScheme.copy(
-            primary = Color(0xFF8B70FF),
-            background = Color(0xFF0B0D12),
-            surface = Color(0xFF121722),
-            onBackground = Color(0xFFF1EFFF),
-            onSurface = Color(0xFFF1EFFF),
-        ),
-        content = content,
-    )
-}
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleDeepLink(intent)
+    }
 
-@Composable
-private fun BridgeHomePlaceholder() {
-    Surface(modifier = Modifier.fillMaxSize()) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Column(
-                modifier = Modifier.padding(32.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Text("MCON Bridge", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Black)
-                Text("Azahar · Artemis · Kirin", color = MaterialTheme.colorScheme.primary)
-                Text("Initial project scaffold", style = MaterialTheme.typography.bodyMedium)
+    private fun handleDeepLink(intent: Intent?) {
+        if (intent?.action != Intent.ACTION_VIEW) return
+        val id = BridgeLink.parse(intent.data)
+        if (id == null) {
+            Toast.makeText(this, "Invalid MCON Bridge link", Toast.LENGTH_LONG).show()
+            return
+        }
+        lifecycleScope.launch {
+            when (val result = (application as MconBridgeApplication).container.launcher.launch(this@MainActivity, id)) {
+                LaunchResult.Started -> finish()
+                is LaunchResult.Error -> Toast.makeText(this@MainActivity, result.message, Toast.LENGTH_LONG).show()
             }
         }
     }

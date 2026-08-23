@@ -14,6 +14,7 @@ import com.vyrena.mconbridge.importer.AzaharImporter
 import com.vyrena.mconbridge.importer.KirinScanner
 import com.vyrena.mconbridge.launch.LaunchCoordinator
 import com.vyrena.mconbridge.settings.SettingsRepository
+import com.vyrena.mconbridge.export.MconExportManager
 import okhttp3.OkHttpClient
 import java.util.concurrent.TimeUnit
 
@@ -33,6 +34,7 @@ class AppContainer(context: Context) {
     val azaharImporter = AzaharImporter(appContext.contentResolver, repository)
     val kirinScanner = KirinScanner(appContext, repository)
     val backupManager = BridgeBackupManager(appContext.contentResolver, repository)
+    val mconExporter = MconExportManager(appContext, repository)
     val artworkRepository = ArtworkRepository(
         bridgeRepository = repository,
         settings = settings,
