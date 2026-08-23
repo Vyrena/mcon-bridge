@@ -4,6 +4,7 @@ import android.content.Context
 import com.vyrena.mconbridge.artwork.ArtworkCache
 import com.vyrena.mconbridge.artwork.ArtworkRepository
 import com.vyrena.mconbridge.artwork.GameTdbProvider
+import com.vyrena.mconbridge.artwork.LibretroThumbnailProvider
 import com.vyrena.mconbridge.artwork.NetworkPolicy
 import com.vyrena.mconbridge.artwork.SteamGridDbProvider
 import com.vyrena.mconbridge.backup.BridgeBackupManager
@@ -41,6 +42,7 @@ class AppContainer(context: Context) {
         networkPolicy = NetworkPolicy(appContext),
         providers = listOf(
             GameTdbProvider(httpClient, settings),
+            LibretroThumbnailProvider(httpClient),
             SteamGridDbProvider(httpClient, settings),
         ),
         cache = ArtworkCache(appContext, httpClient),

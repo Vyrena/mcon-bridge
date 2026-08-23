@@ -19,7 +19,7 @@ saves or modifies game folders.
 - Read-only scan of any Kirin game-library folder in internal shared storage,
   or of a single game folder selected with Android's system folder picker.
 - Stable per-game launch links, backup/restore, local cover selection, and
-  online cover search through GameTDB and SteamGridDB.
+  online cover search through GameTDB, Libretro Thumbnails, and SteamGridDB.
 - Save any selected cover to a user-chosen device folder for manual selection
   in launchers that do not consume the bridge's shared artwork URI.
 - MCON-targeted bulk sharing when MCON advertises the public bridge MIME type,
