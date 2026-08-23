@@ -1,39 +1,81 @@
 package com.vyrena.mconbridge.launch
 
+import android.content.ClipData
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import androidx.core.net.toUri
 import com.vyrena.mconbridge.domain.AzaharPayload
 import com.vyrena.mconbridge.domain.LaunchPayload
 import com.vyrena.mconbridge.domain.LaunchResult
+import org.citra.citra_emu.model.Game
 
 class AzaharLaunchAdapter : LaunchAdapter {
     override fun supports(payload: LaunchPayload): Boolean = payload is AzaharPayload
 
     override fun validate(payload: LaunchPayload): String? {
-        val value = (payload as? AzaharPayload)?.titleId ?: return "Invalid Azahar launch data"
-        return if (TITLE_ID.matches(value)) null else "Azahar title ID must contain 16 hexadecimal characters"
+        val azahar = payload as? AzaharPayload ?: return "Invalid Azahar launch data"
+        if (!TITLE_ID.matches(azahar.titleId)) {
+            return "Azahar title ID must contain 16 hexadecimal characters"
+        }
+        val uri = azahar.gameUri?.takeIf(String::isNotBlank)?.toUri()
+            ?: return "Choose the Azahar ROM again so the ordinary Azahar app can launch it"
+        if (uri.scheme != "content") return "Azahar ROM access is invalid; choose the ROM again"
+        val filename = azahar.filename?.takeIf(String::isNotBlank)
+            ?: return "Azahar ROM filename is missing; choose the ROM again"
+        val extension = azahar.fileType?.lowercase()?.takeIf(SUPPORTED_EXTENSIONS::contains)
+            ?: filename.substringAfterLast('.', "").lowercase().takeIf(SUPPORTED_EXTENSIONS::contains)
+            ?: return "This file type is not supported by Azahar"
+        return if (extension.isBlank()) "This file type is not supported by Azahar" else null
     }
 
     override fun launch(context: Context, gameId: String, payload: LaunchPayload): LaunchResult {
         val azahar = payload as AzaharPayload
         validate(azahar)?.let { return LaunchResult.Error(it) }
-        val intent = Intent(
-            Intent.ACTION_VIEW,
-            "azahar-mcon://game/${azahar.titleId.uppercase()}".toUri(),
-        ).apply {
-            setPackage(PACKAGE)
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+
+        val uri = requireNotNull(azahar.gameUri).toUri()
+        val filename = requireNotNull(azahar.filename)
+        val fileType = azahar.fileType?.lowercase().orEmpty()
+            .ifEmpty { filename.substringAfterLast('.', "").lowercase() }
+        val title = filename.substringBeforeLast('.').ifBlank { filename }
+        val game = Game(
+            valid = true,
+            title = title,
+            path = uri.toString(),
+            titleId = azahar.titleId.toULong(16).toLong(),
+            mediaType = Game.MediaType.GAME_CARD,
+            regions = azahar.region.orEmpty(),
+            fileType = fileType.uppercase(),
+            isCompressed = fileType.startsWith('z'),
+            filename = filename,
+        )
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            component = ComponentName(PACKAGE, EMULATION_ACTIVITY)
+            setDataAndType(uri, "application/octet-stream")
+            clipData = ClipData.newUri(context.contentResolver, "Azahar game", uri)
+            putExtra("game", game)
+            putExtra("launched_from_shortcut", true)
+            putExtra("launchedFromShortcut", true)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
         if (intent.resolveActivity(context.packageManager) == null) {
-            return LaunchResult.Error("Azahar MCON is not installed, or this version cannot open game links")
+            return LaunchResult.Error("Ordinary Azahar is not installed")
         }
-        return runCatching { context.startActivity(intent) }
-            .fold({ LaunchResult.Started }, { LaunchResult.Error(it.message ?: "Unable to launch Azahar") })
+        return runCatching {
+            context.grantUriPermission(PACKAGE, uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            context.startActivity(intent)
+        }.fold(
+            onSuccess = { LaunchResult.Started },
+            onFailure = { LaunchResult.Error(it.message ?: "Unable to launch ordinary Azahar") },
+        )
     }
 
     companion object {
-        const val PACKAGE = "org.azahar_emu.azahar.mcon"
+        const val PACKAGE = "org.azahar_emu.azahar"
+        const val EMULATION_ACTIVITY = "org.citra.citra_emu.activities.EmulationActivity"
+        val SUPPORTED_EXTENSIONS = setOf(
+            "3dsx", "app", "axf", "cci", "cxi", "elf", "z3dsx", "zcci", "zcxi", "3ds",
+        )
         private val TITLE_ID = Regex("^[0-9a-fA-F]{16}$")
     }
 }

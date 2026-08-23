@@ -10,7 +10,7 @@ import com.vyrena.mconbridge.backup.BridgeBackupManager
 import com.vyrena.mconbridge.data.BridgeDatabase
 import com.vyrena.mconbridge.data.BridgeRepository
 import com.vyrena.mconbridge.importer.ArtemisImporter
-import com.vyrena.mconbridge.importer.AzaharImporter
+import com.vyrena.mconbridge.importer.AzaharRomImporter
 import com.vyrena.mconbridge.importer.KirinScanner
 import com.vyrena.mconbridge.launch.LaunchCoordinator
 import com.vyrena.mconbridge.settings.SettingsRepository
@@ -31,7 +31,7 @@ class AppContainer(context: Context) {
     val settings = SettingsRepository(appContext)
     val launcher = LaunchCoordinator(repository)
     val artemisImporter = ArtemisImporter(appContext.contentResolver, repository)
-    val azaharImporter = AzaharImporter(appContext.contentResolver, repository)
+    val azaharRomImporter = AzaharRomImporter(appContext.contentResolver, repository)
     val kirinScanner = KirinScanner(appContext, repository)
     val backupManager = BridgeBackupManager(appContext.contentResolver, repository)
     val mconExporter = MconExportManager(appContext, repository)

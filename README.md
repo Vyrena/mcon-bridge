@@ -3,7 +3,7 @@
 MCON Bridge is an Android companion app that builds a controller-friendly game
 catalog for MCON and launches individual games in:
 
-- Azahar MCON
+- ordinary Azahar
 - Artemis
 - Kirin
 
@@ -12,8 +12,8 @@ saves or modifies game folders.
 
 ## What works
 
-- Add an Azahar game manually by its 16-character title ID or bulk-import a
-  schema-1 Azahar JSON export.
+- Select one or more ROM files already used by ordinary Azahar. The bridge keeps
+  Android read permission and forwards the selected ROM to Azahar at launch.
 - Import one or more Artemis `.art` launcher files.
 - Read-only scan of the exact `/storage/emulated/0/Kirin/games` folder selected
   with Android's system folder picker.
@@ -35,7 +35,8 @@ paths and Artemis host identifiers are never exposed in the MCON URL.
 
 ## Save safety
 
-- Azahar save data remains owned by Azahar.
+- Azahar save data remains owned by ordinary Azahar. The bridge never opens its
+  user-data or save directories.
 - Artemis save data remains on the streaming host.
 - Kirin remains the official signed application. MCON Bridge only reads the
   folder selected by the user and sends Kirin its supported shortcut intent.
@@ -51,7 +52,7 @@ downloaded or selected again.
 ## Setup
 
 1. Install MCON Bridge and the matching emulator app.
-2. Use **Add Azahar**, **Azahar export**, **Artemis .art**, or **Scan Kirin**.
+2. Use **Add Azahar ROMs**, **Artemis .art**, or **Scan Kirin**.
 3. Optionally choose local art or search online. GameTDB works from an exact 3DS
    product code; SteamGridDB requires your own API key, which is encrypted with
    Android Keystore.
@@ -59,7 +60,7 @@ downloaded or selected again.
    MIME type, use the per-game copy button and paste the stable link into MCON.
 
 See [compatibility details](docs/COMPATIBILITY.md), the
-[Azahar export schema](docs/AZAHAR_EXPORT_FORMAT.md), and the
+[legacy Azahar metadata schema](docs/AZAHAR_EXPORT_FORMAT.md), and the
 [MCON handoff schema](docs/MCON_IMPORT_FORMAT.md).
 
 ## Building

@@ -3,14 +3,18 @@
 MCON Bridge exposes only `mconbridge://launch/<uuid>` to launchers. The UUID is
 resolved locally to one of these allow-listed adapters.
 
-## Azahar MCON
+## Ordinary Azahar
 
-- Package: `org.azahar_emu.azahar.mcon`
-- Intent: `ACTION_VIEW`
-- URI: `azahar-mcon://game/<16-hex-title-id>`
+- Package: `org.azahar_emu.azahar`
+- Activity: `org.citra.citra_emu.activities.EmulationActivity`
+- Intent: explicit `ACTION_VIEW` with a user-selected `content://` ROM URI
+- Extra: Azahar-compatible `Game` Parcelable under the `game` key
 
-The adapter deliberately targets the side-by-side Azahar MCON fork, so it
-cannot accidentally route into an incompatible official Azahar installation.
+Android's picker grants MCON Bridge persistent read access to the selected ROM.
+The bridge grants that URI to ordinary Azahar only for launch and never opens
+Azahar's private user-data or save directories. Installed CIA titles cannot be
+imported through this route because ordinary Azahar exposes no public API for
+its private installed-title library.
 
 ## Artemis
 

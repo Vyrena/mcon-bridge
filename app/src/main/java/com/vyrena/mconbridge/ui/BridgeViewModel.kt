@@ -8,8 +8,6 @@ import androidx.lifecycle.viewModelScope
 import com.vyrena.mconbridge.MconBridgeApplication
 import com.vyrena.mconbridge.artwork.ArtworkCandidate
 import com.vyrena.mconbridge.data.GameEntryEntity
-import com.vyrena.mconbridge.data.SourceType
-import com.vyrena.mconbridge.domain.AzaharPayload
 import com.vyrena.mconbridge.domain.BridgeLink
 import com.vyrena.mconbridge.domain.LaunchResult
 import com.vyrena.mconbridge.settings.BridgeSettings
@@ -47,32 +45,19 @@ class BridgeViewModel(application: Application) : AndroidViewModel(application) 
     val artworkPicker = MutableStateFlow<ArtworkPickerState?>(null)
     val cacheSizeBytes = MutableStateFlow(container.artworkRepository.cacheSizeBytes())
 
-    fun importAzahar(uri: Uri) = runBusy("Importing Azahar library") {
-        container.azaharImporter.import(uri).fold(
-            onSuccess = { emit("Imported ${it.size} Azahar game${plural(it.size)}") },
-            onFailure = { emit(it.message ?: "Azahar import failed") },
+    fun importAzaharRoms(uris: List<Uri>) = runBusy("Adding ordinary Azahar ROMs") {
+        container.azaharRomImporter.import(uris).fold(
+            onSuccess = { emit("Added ${it.size} game${plural(it.size)} for ordinary Azahar") },
+            onFailure = { emit(it.message ?: "Azahar ROM import failed") },
         )
     }
 
-    fun addAzahar(title: String, titleId: String, productCode: String?, region: String?) =
-        runBusy("Adding Azahar game") {
-            val normalizedId = titleId.trim().uppercase()
-            if (!normalizedId.matches(Regex("^[0-9A-F]{16}$"))) {
-                emit("Azahar title ID must contain exactly 16 hexadecimal characters")
-                return@runBusy
-            }
-            container.repository.upsertImported(
-                title = title,
-                source = SourceType.AZAHAR,
-                sourceKey = normalizedId,
-                payload = AzaharPayload(
-                    titleId = normalizedId,
-                    productCode = productCode?.trim()?.uppercase()?.takeIf(String::isNotEmpty),
-                    region = region?.trim()?.uppercase()?.takeIf(String::isNotEmpty),
-                ),
-            )
-            emit("Added ${title.trim().ifEmpty { "Untitled game" }}")
-        }
+    fun linkAzaharRom(game: GameEntryEntity, uri: Uri) = runBusy("Linking Azahar ROM") {
+        container.azaharRomImporter.link(game, uri).fold(
+            onSuccess = { emit("${game.title} is ready for ordinary Azahar") },
+            onFailure = { emit(it.message ?: "Unable to link Azahar ROM") },
+        )
+    }
 
     fun importArtemis(uris: List<Uri>) = runBusy("Importing Artemis launchers") {
         container.artemisImporter.import(uris).fold(

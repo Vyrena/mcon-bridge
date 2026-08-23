@@ -13,6 +13,9 @@ data class AzaharPayload(
     val titleId: String,
     val productCode: String? = null,
     val region: String? = null,
+    val gameUri: String? = null,
+    val filename: String? = null,
+    val fileType: String? = null,
 ) : LaunchPayload
 
 @Serializable

@@ -5,7 +5,7 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <queries>
-        <package android:name="org.azahar_emu.azahar.mcon" />
+        <package android:name="org.azahar_emu.azahar" />
         <package android:name="com.limelight.noir" />
         <package android:name="com.gmax.kirin" />
         <package android:name="com.ohsnap.mconutilities" />

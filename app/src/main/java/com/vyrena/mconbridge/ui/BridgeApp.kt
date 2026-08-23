@@ -34,6 +34,7 @@ import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Gamepad
+import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.ImageSearch
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Restore
@@ -92,11 +93,16 @@ fun BridgeApp(viewModel: BridgeViewModel) {
     val cacheBytes by viewModel.cacheSizeBytes.collectAsStateWithLifecycle()
     var tab by rememberSaveable { mutableStateOf(BridgeTab.LIBRARY) }
     var localArtworkTarget by remember { mutableStateOf<GameEntryEntity?>(null) }
+    var azaharRelinkTarget by remember { mutableStateOf<GameEntryEntity?>(null) }
     var deleteTarget by remember { mutableStateOf<GameEntryEntity?>(null) }
-    var showManualAzahar by rememberSaveable { mutableStateOf(false) }
 
-    val azaharPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        uri?.let(viewModel::importAzahar)
+    val azaharRomPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
+        if (uris.isNotEmpty()) viewModel.importAzaharRoms(uris)
+    }
+    val azaharRelinkPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        val game = azaharRelinkTarget
+        if (uri != null && game != null) viewModel.linkAzaharRom(game, uri)
+        azaharRelinkTarget = null
     }
     val artemisPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
         if (uris.isNotEmpty()) viewModel.importArtemis(uris)
@@ -164,13 +170,16 @@ fun BridgeApp(viewModel: BridgeViewModel) {
             when (tab) {
                 BridgeTab.LIBRARY -> LibraryScreen(
                     games = games,
-                    onAddAzahar = { showManualAzahar = true },
-                    onImportAzahar = { azaharPicker.launch(arrayOf("application/json", "text/plain")) },
+                    onAddAzaharRoms = { azaharRomPicker.launch(arrayOf("*/*")) },
                     onImportArtemis = { artemisPicker.launch(arrayOf("application/octet-stream", "text/plain", "*/*")) },
                     onScanKirin = { kirinPicker.launch(null) },
                     onExportMcon = viewModel::exportMcon,
                     onLaunch = viewModel::launch,
                     onCopy = viewModel::copyLink,
+                    onRelinkAzahar = {
+                        azaharRelinkTarget = it
+                        azaharRelinkPicker.launch(arrayOf("*/*"))
+                    },
                     onSearchArtwork = viewModel::searchArtwork,
                     onLocalArtwork = {
                         localArtworkTarget = it
@@ -206,16 +215,6 @@ fun BridgeApp(viewModel: BridgeViewModel) {
         ArtworkPickerDialog(state, viewModel::applyArtwork, viewModel::closeArtworkPicker)
     }
 
-    if (showManualAzahar) {
-        ManualAzaharDialog(
-            onDismiss = { showManualAzahar = false },
-            onAdd = { title, titleId, productCode, region ->
-                viewModel.addAzahar(title, titleId, productCode, region)
-                showManualAzahar = false
-            },
-        )
-    }
-
     deleteTarget?.let { game ->
         AlertDialog(
             onDismissRequest = { deleteTarget = null },
@@ -232,13 +231,13 @@ fun BridgeApp(viewModel: BridgeViewModel) {
 @Composable
 private fun LibraryScreen(
     games: List<GameEntryEntity>,
-    onAddAzahar: () -> Unit,
-    onImportAzahar: () -> Unit,
+    onAddAzaharRoms: () -> Unit,
     onImportArtemis: () -> Unit,
     onScanKirin: () -> Unit,
     onExportMcon: () -> Unit,
     onLaunch: (GameEntryEntity) -> Unit,
     onCopy: (GameEntryEntity) -> Unit,
+    onRelinkAzahar: (GameEntryEntity) -> Unit,
     onSearchArtwork: (GameEntryEntity) -> Unit,
     onLocalArtwork: (GameEntryEntity) -> Unit,
     onDelete: (GameEntryEntity) -> Unit,
@@ -249,8 +248,7 @@ private fun LibraryScreen(
             contentPadding = PaddingValues(horizontal = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            item { FilledTonalButton(onClick = onAddAzahar) { Icon(Icons.Default.Add, null); Spacer(Modifier.size(8.dp)); Text("Add Azahar") } }
-            item { FilledTonalButton(onClick = onImportAzahar) { Icon(Icons.Default.Download, null); Spacer(Modifier.size(8.dp)); Text("Azahar export") } }
+            item { FilledTonalButton(onClick = onAddAzaharRoms) { Icon(Icons.Default.Add, null); Spacer(Modifier.size(8.dp)); Text("Add Azahar ROMs") } }
             item { FilledTonalButton(onClick = onImportArtemis) { Icon(Icons.Default.Download, null); Spacer(Modifier.size(8.dp)); Text("Artemis .art") } }
             item { FilledTonalButton(onClick = onScanKirin) { Icon(Icons.Default.CloudDownload, null); Spacer(Modifier.size(8.dp)); Text("Scan Kirin") } }
             item { Button(onClick = onExportMcon, enabled = games.isNotEmpty()) { Icon(Icons.Default.Upload, null); Spacer(Modifier.size(8.dp)); Text("Export to MCON") } }
@@ -265,7 +263,7 @@ private fun LibraryScreen(
                 Spacer(Modifier.height(18.dp))
                 Text("Build your MCON library", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                 Text(
-                    "Import an Azahar export or Artemis .art files, or select /storage/emulated/0/Kirin/games. Kirin scanning is read-only.",
+                    "Choose the same ROM files you already use in ordinary Azahar. The bridge keeps read-only access and does not copy games or saves.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                 )
@@ -279,7 +277,7 @@ private fun LibraryScreen(
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
                 items(games, key = GameEntryEntity::id) { game ->
-                    GameCard(game, onLaunch, onCopy, onSearchArtwork, onLocalArtwork, onDelete)
+                    GameCard(game, onLaunch, onCopy, onRelinkAzahar, onSearchArtwork, onLocalArtwork, onDelete)
                 }
             }
         }
@@ -287,68 +285,11 @@ private fun LibraryScreen(
 }
 
 @Composable
-private fun ManualAzaharDialog(
-    onDismiss: () -> Unit,
-    onAdd: (String, String, String?, String?) -> Unit,
-) {
-    var title by rememberSaveable { mutableStateOf("") }
-    var titleId by rememberSaveable { mutableStateOf("") }
-    var productCode by rememberSaveable { mutableStateOf("") }
-    var region by rememberSaveable { mutableStateOf("") }
-    val valid = title.isNotBlank() && titleId.trim().matches(Regex("^[0-9a-fA-F]{16}$"))
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Add Azahar game") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("Find the 16-character title ID in Azahar's game information screen.")
-                OutlinedTextField(
-                    value = title,
-                    onValueChange = { title = it },
-                    label = { Text("Game title") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                OutlinedTextField(
-                    value = titleId,
-                    onValueChange = { titleId = it.take(16) },
-                    label = { Text("Title ID (16 hex characters)") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii),
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                OutlinedTextField(
-                    value = productCode,
-                    onValueChange = { productCode = it },
-                    label = { Text("Product code (optional)") },
-                    supportingText = { Text("Improves GameTDB cover matching") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                OutlinedTextField(
-                    value = region,
-                    onValueChange = { region = it.take(3) },
-                    label = { Text("Region (optional, e.g. US)") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = { onAdd(title, titleId, productCode.takeIf(String::isNotBlank), region.takeIf(String::isNotBlank)) },
-                enabled = valid,
-            ) { Text("Add game") }
-        },
-        dismissButton = { OutlinedButton(onClick = onDismiss) { Text("Cancel") } },
-    )
-}
-
-@Composable
 private fun GameCard(
     game: GameEntryEntity,
     onLaunch: (GameEntryEntity) -> Unit,
     onCopy: (GameEntryEntity) -> Unit,
+    onRelinkAzahar: (GameEntryEntity) -> Unit,
     onSearchArtwork: (GameEntryEntity) -> Unit,
     onLocalArtwork: (GameEntryEntity) -> Unit,
     onDelete: (GameEntryEntity) -> Unit,
@@ -379,6 +320,11 @@ private fun GameCard(
             }
             Button(onClick = { onLaunch(game) }, modifier = Modifier.fillMaxWidth().height(52.dp)) {
                 Icon(Icons.Default.PlayArrow, null); Spacer(Modifier.size(8.dp)); Text("Launch")
+            }
+            if (game.source == SourceType.AZAHAR) {
+                OutlinedButton(onClick = { onRelinkAzahar(game) }, modifier = Modifier.fillMaxWidth()) {
+                    Icon(Icons.Default.FolderOpen, null); Spacer(Modifier.size(8.dp)); Text("Choose ROM")
+                }
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 IconButton(onClick = { onCopy(game) }) { Icon(Icons.Default.ContentCopy, "Copy MCON link") }
@@ -463,7 +409,7 @@ private fun SettingsScreen(
             Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("Save-data safety", fontWeight = FontWeight.Bold)
-                    Text("MCON Bridge never writes emulator saves. Kirin scanning requires only the folder access you choose and accepts only /storage/emulated/0/Kirin/games. Back up /storage/emulated/0/Kirin before the first real-device test.")
+                    Text("MCON Bridge never writes emulator saves. Azahar ROM access is read-only and is forwarded only to the ordinary Azahar app when you launch a game.")
                 }
             }
         }
