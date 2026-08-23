@@ -2,7 +2,7 @@ package com.vyrena.mconbridge.launch
 
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
+import androidx.core.net.toUri
 import com.vyrena.mconbridge.domain.AzaharPayload
 import com.vyrena.mconbridge.domain.LaunchPayload
 import com.vyrena.mconbridge.domain.LaunchResult
@@ -20,7 +20,7 @@ class AzaharLaunchAdapter : LaunchAdapter {
         validate(azahar)?.let { return LaunchResult.Error(it) }
         val intent = Intent(
             Intent.ACTION_VIEW,
-            Uri.parse("azahar-mcon://game/${azahar.titleId.uppercase()}"),
+            "azahar-mcon://game/${azahar.titleId.uppercase()}".toUri(),
         ).apply {
             setPackage(PACKAGE)
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)

@@ -272,7 +272,7 @@ private fun LibraryScreen(
             }
         } else {
             LazyVerticalGrid(
-                columns = GridCells.Adaptive(220.dp),
+                columns = GridCells.Adaptive(168.dp),
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(16.dp),
                 horizontalArrangement = Arrangement.spacedBy(14.dp),

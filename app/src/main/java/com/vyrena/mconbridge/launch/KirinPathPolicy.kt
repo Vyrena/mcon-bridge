@@ -10,8 +10,7 @@ object KirinPathPolicy {
         return runCatching {
             val root = File(allowedRoot).canonicalFile
             val candidate = File(path).canonicalFile
-            val prefix = root.path.trimEnd(File.separatorChar) + File.separator
-            candidate.path.takeIf { it.startsWith(prefix) && it != root.path }
+            candidate.path.takeIf { candidate.parentFile == root }
         }.getOrNull()
     }
 }

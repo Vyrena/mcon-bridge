@@ -45,7 +45,6 @@ class BridgeRepository(private val dao: GameDao) {
     suspend fun delete(entity: GameEntryEntity) = dao.delete(entity)
 
     suspend fun replaceAll(entities: List<GameEntryEntity>) {
-        dao.deleteAll()
-        dao.upsertAll(entities)
+        dao.replaceAll(entities)
     }
 }

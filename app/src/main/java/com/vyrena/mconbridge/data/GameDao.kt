@@ -3,6 +3,7 @@ package com.vyrena.mconbridge.data
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Upsert
 import kotlinx.coroutines.flow.Flow
 
@@ -31,4 +32,10 @@ interface GameDao {
 
     @Query("DELETE FROM games")
     suspend fun deleteAll()
+
+    @Transaction
+    suspend fun replaceAll(games: List<GameEntryEntity>) {
+        deleteAll()
+        upsertAll(games)
+    }
 }

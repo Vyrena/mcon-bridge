@@ -17,9 +17,12 @@ class ArtemisLaunchAdapter : LaunchAdapter {
         if (artemis.hostUuid.isBlank() || artemis.hostUuid.length > 128) return "Artemis host UUID is missing or invalid"
         val identities = listOf(artemis.appUuid, artemis.appName, artemis.appId).count { !it.isNullOrBlank() }
         if (identities == 0) return "Artemis game identifier is missing"
-        if (listOf(artemis.hostName, artemis.appUuid, artemis.appName, artemis.appId)
+        if (listOf(artemis.hostUuid, artemis.hostName, artemis.appUuid, artemis.appName, artemis.appId)
                 .filterNotNull().any { it.contains('\n') || it.contains('\r') }
         ) return "Artemis launch data contains an invalid newline"
+        if (listOf(artemis.hostName, artemis.appUuid, artemis.appName)
+                .filterNotNull().any { it.length > 512 }
+        ) return "Artemis launch data is too long"
         if (artemis.appId != null && !artemis.appId.matches(Regex("^[0-9]{1,10}$"))) return "Artemis app ID is invalid"
         return null
     }

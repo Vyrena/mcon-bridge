@@ -18,7 +18,10 @@ every `titleId` must contain exactly 16 hexadecimal characters.
 }
 ```
 
-`productCode`, `region`, and `artworkUri` are optional. Product code enables an
-exact GameTDB lookup; without it, users can search SteamGridDB or choose a local
-image. The importer stores only launch metadata and never opens an Azahar user
-or save-data directory.
+`productCode` and `region` are optional. Product code can be either GameTDB's
+four-character ID or a full 3DS code such as `CTR-P-ECLE`; it enables an exact
+GameTDB lookup. Without it, users can search SteamGridDB or choose a local
+image. `artworkUri` is accepted for schema compatibility but deliberately not
+trusted or imported; cover data must pass the bridge's verified artwork cache.
+The importer stores only launch metadata and never opens an Azahar user or
+save-data directory.

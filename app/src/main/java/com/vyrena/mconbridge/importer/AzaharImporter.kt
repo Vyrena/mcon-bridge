@@ -49,7 +49,6 @@ class AzaharImporter(
                     productCode = game.productCode?.uppercase(),
                     region = game.region?.uppercase(),
                 ),
-                artworkUri = game.artworkUri,
             )
         }
     }

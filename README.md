@@ -44,6 +44,10 @@ paths and Artemis host identifiers are never exposed in the MCON URL.
 Removing a game from MCON Bridge deletes only its catalog row. It never deletes
 a ROM, streamed app, emulator configuration, or save file.
 
+Bridge backups contain catalog metadata, not cached cover image bytes. A cover
+whose original URI is unavailable after restore is cleared safely and can be
+downloaded or selected again.
+
 ## Setup
 
 1. Install MCON Bridge and the matching emulator app.
@@ -65,6 +69,11 @@ Install Android SDK 36 and JDK 17, then run:
 ```bash
 ./gradlew testDebugUnitTest lintDebug assembleDebug
 ```
+
+For an update-compatible release build, provide `MCON_BRIDGE_KEYSTORE`,
+`MCON_BRIDGE_STORE_PASSWORD`, `MCON_BRIDGE_KEY_ALIAS`, and
+`MCON_BRIDGE_KEY_PASSWORD`, then run `./gradlew assembleRelease`. Never commit
+the signing key: every future APK installed as an update must use the same key.
 
 ## License
 

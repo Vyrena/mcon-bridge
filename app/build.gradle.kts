@@ -6,6 +6,17 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization")
 }
 
+val releaseKeystore = providers.environmentVariable("MCON_BRIDGE_KEYSTORE").orNull
+val releaseStorePassword = providers.environmentVariable("MCON_BRIDGE_STORE_PASSWORD").orNull
+val releaseKeyAlias = providers.environmentVariable("MCON_BRIDGE_KEY_ALIAS").orNull
+val releaseKeyPassword = providers.environmentVariable("MCON_BRIDGE_KEY_PASSWORD").orNull
+val hasReleaseSigning = listOf(
+    releaseKeystore,
+    releaseStorePassword,
+    releaseKeyAlias,
+    releaseKeyPassword,
+).all { !it.isNullOrBlank() }
+
 android {
     namespace = "com.vyrena.mconbridge"
     compileSdk = 36
@@ -21,9 +32,21 @@ android {
         vectorDrawables.useSupportLibrary = true
     }
 
+    signingConfigs {
+        if (hasReleaseSigning) {
+            create("release") {
+                storeFile = file(requireNotNull(releaseKeystore))
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
+            signingConfig = signingConfigs.findByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
@@ -66,7 +89,6 @@ dependencies {
     kapt("androidx.room:room-compiler:2.6.1")
 
     implementation("androidx.datastore:datastore-preferences:1.1.1")
-    implementation("androidx.work:work-runtime-ktx:2.9.1")
     implementation("androidx.documentfile:documentfile:1.0.1")
     implementation("androidx.core:core-ktx:1.15.0")
 
