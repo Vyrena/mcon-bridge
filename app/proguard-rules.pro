@@ -1,0 +1,2 @@
+-keep class androidx.room.** { *; }
+-keep @kotlinx.serialization.Serializable class ** { *; }
