@@ -30,7 +30,10 @@ data class ArtemisPayload(
 
 @Serializable
 @SerialName("kirin")
-data class KirinPayload(val gamePath: String) : LaunchPayload
+data class KirinPayload(
+    val gamePath: String,
+    val selectedRoot: String? = null,
+) : LaunchPayload
 
 object LaunchPayloadCodec {
     private val json = Json {

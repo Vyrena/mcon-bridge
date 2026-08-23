@@ -15,8 +15,8 @@ saves or modifies game folders.
 - Select one or more ROM files already used by ordinary Azahar. The bridge keeps
   Android read permission and forwards the selected ROM to Azahar at launch.
 - Import one or more Artemis `.art` launcher files.
-- Read-only scan of the exact `/storage/emulated/0/Kirin/games` folder selected
-  with Android's system folder picker.
+- Read-only scan of any Kirin game-library folder in internal shared storage,
+  or of a single game folder selected with Android's system folder picker.
 - Stable per-game launch links, backup/restore, local cover selection, and
   online cover search through GameTDB and SteamGridDB.
 - MCON-targeted bulk sharing when MCON advertises the public bridge MIME type,
@@ -40,7 +40,7 @@ paths and Artemis host identifiers are never exposed in the MCON URL.
 - Artemis save data remains on the streaming host.
 - Kirin remains the official signed application. MCON Bridge only reads the
   folder selected by the user and sends Kirin its supported shortcut intent.
-- Back up `/storage/emulated/0/Kirin` before first-device compatibility tests.
+- Back up Kirin's existing data before first-device compatibility tests.
 
 Removing a game from MCON Bridge deletes only its catalog row. It never deletes
 a ROM, streamed app, emulator configuration, or save file.
@@ -52,7 +52,9 @@ downloaded or selected again.
 ## Setup
 
 1. Install MCON Bridge and the matching emulator app.
-2. Use **Add Azahar ROMs**, **Artemis .art**, or **Scan Kirin**.
+2. Use **Add Azahar ROMs**, **Artemis .art**, or **Scan Kirin**. For Kirin,
+   choose either a folder containing game folders or one game folder itself;
+   `/Kirin/games` is not required.
 3. Optionally choose local art or search online. GameTDB works from an exact 3DS
    product code; SteamGridDB requires your own API key, which is encrypted with
    Android Keystore.

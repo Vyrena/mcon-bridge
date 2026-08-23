@@ -250,7 +250,7 @@ private fun LibraryScreen(
         ) {
             item { FilledTonalButton(onClick = onAddAzaharRoms) { Icon(Icons.Default.Add, null); Spacer(Modifier.size(8.dp)); Text("Add Azahar ROMs") } }
             item { FilledTonalButton(onClick = onImportArtemis) { Icon(Icons.Default.Download, null); Spacer(Modifier.size(8.dp)); Text("Artemis .art") } }
-            item { FilledTonalButton(onClick = onScanKirin) { Icon(Icons.Default.CloudDownload, null); Spacer(Modifier.size(8.dp)); Text("Scan Kirin") } }
+            item { FilledTonalButton(onClick = onScanKirin) { Icon(Icons.Default.CloudDownload, null); Spacer(Modifier.size(8.dp)); Text("Choose Kirin folder") } }
             item { Button(onClick = onExportMcon, enabled = games.isNotEmpty()) { Icon(Icons.Default.Upload, null); Spacer(Modifier.size(8.dp)); Text("Export to MCON") } }
         }
         if (games.isEmpty()) {
@@ -263,7 +263,7 @@ private fun LibraryScreen(
                 Spacer(Modifier.height(18.dp))
                 Text("Build your MCON library", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                 Text(
-                    "Choose the same ROM files you already use in ordinary Azahar. The bridge keeps read-only access and does not copy games or saves.",
+                    "Choose ordinary Azahar ROMs, import Artemis launchers, or select any Kirin library or game folder. The bridge keeps read-only access and does not copy games or saves.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                 )

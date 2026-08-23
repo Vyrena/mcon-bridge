@@ -11,16 +11,18 @@ class KirinLaunchAdapter : LaunchAdapter {
     override fun supports(payload: LaunchPayload): Boolean = payload is KirinPayload
 
     override fun validate(payload: LaunchPayload): String? {
-        val value = (payload as? KirinPayload)?.gamePath ?: return "Invalid Kirin launch data"
-        return if (KirinPathPolicy.canonicalGamePath(value) == null) {
-            "Kirin game path is outside /storage/emulated/0/Kirin/games"
+        val kirin = payload as? KirinPayload ?: return "Invalid Kirin launch data"
+        val selectedRoot = kirin.selectedRoot ?: KirinPathPolicy.DEFAULT_GAMES_ROOT
+        return if (KirinPathPolicy.canonicalGamePath(kirin.gamePath, selectedRoot) == null) {
+            "Kirin game path is outside the folder selected during the scan"
         } else null
     }
 
     override fun launch(context: Context, gameId: String, payload: LaunchPayload): LaunchResult {
         val kirin = payload as KirinPayload
-        val canonicalPath = KirinPathPolicy.canonicalGamePath(kirin.gamePath)
-            ?: return LaunchResult.Error("Kirin game path is invalid or outside the allowed games folder")
+        val selectedRoot = kirin.selectedRoot ?: KirinPathPolicy.DEFAULT_GAMES_ROOT
+        val canonicalPath = KirinPathPolicy.canonicalGamePath(kirin.gamePath, selectedRoot)
+            ?: return LaunchResult.Error("Kirin game path is invalid or outside the folder selected during the scan")
         val intent = Intent(ACTION).apply {
             component = ComponentName(PACKAGE, MAIN_ACTIVITY)
             putExtra(EXTRA_GAME_PATH, canonicalPath)

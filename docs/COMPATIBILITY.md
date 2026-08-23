@@ -33,10 +33,12 @@ credential, or save data is copied into MCON.
 - Action: `com.gmax.kirin.action.LAUNCH_GAME_SHORTCUT`
 - Extra: `shortcut_game_path`
 
-The contract was checked against Kirin 0.3.5 (`versionCode 23`). Paths must be
-canonical direct children of `/storage/emulated/0/Kirin/games`. The scanner
-uses Android's Storage Access Framework with read permission only. It never
-writes inside Kirin's tree and never accesses saves.
+The contract was checked against Kirin 0.3.5 (`versionCode 23`). Kirin records
+the absolute path of each registered game, so the bridge accepts a game folder
+or direct child of any explicitly selected folder in primary shared storage;
+`/storage/emulated/0/Kirin/games` remains supported but is not required. The
+scanner uses Android's Storage Access Framework with read permission only. It
+never writes inside the selected tree and never accesses saves.
 
 These are compatibility contracts, not vendor APIs. Revalidate them after an
 emulator update before depending on a new release.
