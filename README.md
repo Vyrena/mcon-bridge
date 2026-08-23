@@ -22,6 +22,7 @@ saves or modifies game folders.
   online cover search through GameTDB, Libretro Thumbnails, and SteamGridDB.
 - Save any selected cover to a user-chosen device folder for manual selection
   in launchers that do not consume the bridge's shared artwork URI.
+- Artwork results show their real width:height ratio and use uncropped previews.
 - MCON-targeted bulk sharing when MCON advertises the public bridge MIME type,
   with a share-sheet and copy-link fallback when it does not.
 

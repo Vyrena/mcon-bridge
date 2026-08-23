@@ -80,6 +80,7 @@ import com.vyrena.mconbridge.artwork.ArtworkCandidate
 import com.vyrena.mconbridge.data.GameEntryEntity
 import com.vyrena.mconbridge.data.SourceType
 import java.text.NumberFormat
+import java.util.Locale
 
 private enum class BridgeTab { LIBRARY, SETTINGS }
 
@@ -462,18 +463,34 @@ private fun ArtworkPickerDialog(
                 state.error != null && state.candidates.isEmpty() -> Text(state.error)
                 else -> LazyColumn(Modifier.fillMaxWidth().height(420.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     items(state.candidates, key = ArtworkCandidate::id) { candidate ->
+                        var imageWidth by remember(candidate.id) { mutableIntStateOf(candidate.width ?: 0) }
+                        var imageHeight by remember(candidate.id) { mutableIntStateOf(candidate.height ?: 0) }
                         Card(onClick = { onSelect(candidate) }, modifier = Modifier.fillMaxWidth()) {
                             Row(Modifier.padding(10.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                                 AsyncImage(
                                     model = candidate.thumbnailUrl ?: candidate.imageUrl,
                                     contentDescription = null,
                                     modifier = Modifier.size(74.dp, 110.dp),
-                                    contentScale = ContentScale.Crop,
+                                    contentScale = ContentScale.Fit,
+                                    onSuccess = { state ->
+                                        if (candidate.width == null || candidate.height == null) {
+                                            val drawable = state.result.drawable
+                                            if (drawable.intrinsicWidth > 0 && drawable.intrinsicHeight > 0) {
+                                                imageWidth = drawable.intrinsicWidth
+                                                imageHeight = drawable.intrinsicHeight
+                                            }
+                                        }
+                                    },
                                 )
                                 Column(Modifier.weight(1f)) {
                                     Text(candidate.title, fontWeight = FontWeight.Bold, maxLines = 2)
                                     Text(candidate.provider, color = MaterialTheme.colorScheme.primary)
                                     Text("Match ${(candidate.confidence * 100).toInt()}%", style = MaterialTheme.typography.labelMedium)
+                                    Text(
+                                        imageAspectRatioLabel(imageWidth, imageHeight)?.let { "Image ratio $it" }
+                                            ?: "Image ratio loading…",
+                                        style = MaterialTheme.typography.labelMedium,
+                                    )
                                     Text(candidate.attribution, style = MaterialTheme.typography.labelSmall, maxLines = 2)
                                 }
                             }
@@ -488,3 +505,17 @@ private fun ArtworkPickerDialog(
 }
 
 private fun SourceType.displayName() = name.lowercase().replaceFirstChar(Char::uppercase)
+
+internal fun imageAspectRatioLabel(width: Int, height: Int): String? {
+    if (width <= 0 || height <= 0) return null
+    val divisor = greatestCommonDivisor(width, height)
+    val reducedWidth = width / divisor
+    val reducedHeight = height / divisor
+    if (reducedWidth <= 20 && reducedHeight <= 20) return "$reducedWidth:$reducedHeight"
+    val value = if (width >= height) width.toDouble() / height else height.toDouble() / width
+    val decimal = String.format(Locale.US, "%.2f", value).trimEnd('0').trimEnd('.')
+    return if (width >= height) "$decimal:1" else "1:$decimal"
+}
+
+private tailrec fun greatestCommonDivisor(left: Int, right: Int): Int =
+    if (right == 0) left else greatestCommonDivisor(right, left % right)
