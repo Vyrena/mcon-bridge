@@ -8,7 +8,10 @@ import androidx.lifecycle.viewModelScope
 import com.vyrena.mconbridge.MconBridgeApplication
 import com.vyrena.mconbridge.artwork.ArtworkCandidate
 import com.vyrena.mconbridge.data.GameEntryEntity
+import com.vyrena.mconbridge.data.SourceType
+import com.vyrena.mconbridge.domain.AzaharPayload
 import com.vyrena.mconbridge.domain.BridgeLink
+import com.vyrena.mconbridge.domain.LaunchPayloadCodec
 import com.vyrena.mconbridge.domain.LaunchResult
 import com.vyrena.mconbridge.settings.BridgeSettings
 import kotlinx.coroutines.channels.Channel
@@ -120,17 +123,20 @@ class BridgeViewModel(application: Application) : AndroidViewModel(application) 
     fun searchArtwork(game: GameEntryEntity) {
         artworkPicker.value = ArtworkPickerState(game)
         viewModelScope.launch {
-            container.artworkRepository.search(game).fold(
+            val searchableGame = if (game.source == SourceType.AZAHAR) {
+                container.azaharRomImporter.refreshMetadata(game).getOrDefault(game)
+            } else game
+            container.artworkRepository.search(searchableGame).fold(
                 onSuccess = {
                     artworkPicker.value = ArtworkPickerState(
-                        game = game,
+                        game = searchableGame,
                         loading = false,
                         candidates = it,
-                        error = if (it.isEmpty()) "No online matches. Try a local image or add a SteamGridDB key." else null,
+                        error = if (it.isEmpty()) noArtworkMatchesMessage(searchableGame) else null,
                     )
                 },
                 onFailure = {
-                    artworkPicker.value = ArtworkPickerState(game, loading = false, error = it.message)
+                    artworkPicker.value = ArtworkPickerState(searchableGame, loading = false, error = it.message)
                 },
             )
         }
@@ -208,4 +214,13 @@ class BridgeViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     private fun plural(count: Int) = if (count == 1) "" else "s"
+
+    private fun noArtworkMatchesMessage(game: GameEntryEntity): String {
+        val payload = runCatching { LaunchPayloadCodec.decode(game.launchPayload) }.getOrNull()
+        return if (game.source == SourceType.AZAHAR && (payload as? AzaharPayload)?.productCode.isNullOrBlank()) {
+            "GameTDB needs ROM metadata. Choose the ROM again, use a local image, or add a SteamGridDB key."
+        } else {
+            "No online matches. Try a local image or add a SteamGridDB key."
+        }
+    }
 }

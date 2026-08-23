@@ -46,5 +46,5 @@ class GameTdbProvider(
 internal fun gameTdbIdFromProductCode(value: String): String? {
     val normalized = value.trim().uppercase()
     if (normalized.matches(Regex("^[A-Z0-9]{4}$"))) return normalized
-    return Regex("^CTR-[A-Z0-9]-([A-Z0-9]{4})$").matchEntire(normalized)?.groupValues?.get(1)
+    return Regex("^(?:CTR|KTR)-[A-Z0-9]-([A-Z0-9]{4})$").matchEntire(normalized)?.groupValues?.get(1)
 }

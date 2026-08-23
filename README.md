@@ -13,7 +13,8 @@ saves or modifies game folders.
 ## What works
 
 - Select one or more ROM files already used by ordinary Azahar. The bridge keeps
-  Android read permission and forwards the selected ROM to Azahar at launch.
+  Android read permission, reads the ROM header for GameTDB cover matching, and
+  forwards the selected ROM to Azahar at launch.
 - Import one or more Artemis `.art` launcher files.
 - Read-only scan of any Kirin game-library folder in internal shared storage,
   or of a single game folder selected with Android's system folder picker.

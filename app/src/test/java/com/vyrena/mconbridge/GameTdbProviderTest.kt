@@ -14,6 +14,7 @@ class GameTdbProviderTest {
     @Test
     fun `extracts database id from 3DS product code`() {
         assertEquals("ECLE", gameTdbIdFromProductCode("CTR-P-ECLE"))
+        assertEquals("AADE", gameTdbIdFromProductCode("KTR-P-AADE"))
     }
 
     @Test
