@@ -8,7 +8,6 @@ import androidx.core.net.toUri
 import com.vyrena.mconbridge.domain.AzaharPayload
 import com.vyrena.mconbridge.domain.LaunchPayload
 import com.vyrena.mconbridge.domain.LaunchResult
-import org.citra.citra_emu.model.Game
 
 class AzaharLaunchAdapter : LaunchAdapter {
     override fun supports(payload: LaunchPayload): Boolean = payload is AzaharPayload
@@ -34,26 +33,10 @@ class AzaharLaunchAdapter : LaunchAdapter {
         validate(azahar)?.let { return LaunchResult.Error(it) }
 
         val uri = requireNotNull(azahar.gameUri).toUri()
-        val filename = requireNotNull(azahar.filename)
-        val fileType = azahar.fileType?.lowercase().orEmpty()
-            .ifEmpty { filename.substringAfterLast('.', "").lowercase() }
-        val title = filename.substringBeforeLast('.').ifBlank { filename }
-        val game = Game(
-            valid = true,
-            title = title,
-            path = uri.toString(),
-            titleId = azahar.titleId.toULong(16).toLong(),
-            mediaType = Game.MediaType.GAME_CARD,
-            regions = azahar.region.orEmpty(),
-            fileType = fileType.uppercase(),
-            isCompressed = fileType.startsWith('z'),
-            filename = filename,
-        )
         val intent = Intent(Intent.ACTION_VIEW).apply {
             component = ComponentName(PACKAGE, EMULATION_ACTIVITY)
-            setDataAndType(uri, "application/octet-stream")
+            data = uri
             clipData = ClipData.newUri(context.contentResolver, "Azahar game", uri)
-            putExtra("game", game)
             putExtra("launched_from_shortcut", true)
             putExtra("launchedFromShortcut", true)
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION)
