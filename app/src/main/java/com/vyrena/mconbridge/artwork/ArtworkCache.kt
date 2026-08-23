@@ -43,6 +43,21 @@ class ArtworkCache(
         CachedArtwork(file.toUri().toString(), "Local", "User-selected artwork", null)
     }
 
+    suspend fun saveToDevice(cachedUri: String, destination: Uri): Long = withContext(Dispatchers.IO) {
+        val sourceUri = cachedUri.toUri()
+        require(sourceUri.scheme == ContentResolver.SCHEME_FILE) { "Artwork is not available in the verified cache" }
+        val source = File(sourceUri.path ?: error("Artwork cache path is missing")).canonicalFile
+        require(source.path.startsWith(directory.canonicalPath + File.separator) && source.isFile) {
+            "Artwork is missing from the verified cache"
+        }
+        require(source.length() in 1..MAX_BYTES) { "Artwork file size is invalid" }
+        val output = resolver.openOutputStream(destination, "wt") ?: error("Unable to create the artwork file")
+        output.use { destinationStream ->
+            source.inputStream().use { sourceStream -> sourceStream.copyTo(destinationStream) }
+        }
+        source.length()
+    }
+
     suspend fun prune(limitMb: Int, protectedUris: Set<String>): Long = withContext(Dispatchers.IO) {
         val limitBytes = limitMb.coerceIn(32, 2048).toLong() * 1024 * 1024
         val files = directory.listFiles().orEmpty().filter(File::isFile).sortedBy(File::lastModified)

@@ -93,6 +93,7 @@ fun BridgeApp(viewModel: BridgeViewModel) {
     val cacheBytes by viewModel.cacheSizeBytes.collectAsStateWithLifecycle()
     var tab by rememberSaveable { mutableStateOf(BridgeTab.LIBRARY) }
     var localArtworkTarget by remember { mutableStateOf<GameEntryEntity?>(null) }
+    var artworkSaveTarget by remember { mutableStateOf<GameEntryEntity?>(null) }
     var azaharRelinkTarget by remember { mutableStateOf<GameEntryEntity?>(null) }
     var deleteTarget by remember { mutableStateOf<GameEntryEntity?>(null) }
 
@@ -122,6 +123,11 @@ fun BridgeApp(viewModel: BridgeViewModel) {
         val game = localArtworkTarget
         if (uri != null && game != null) viewModel.applyLocalArtwork(game, uri)
         localArtworkTarget = null
+    }
+    val artworkSavePicker = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("image/*")) { uri ->
+        val game = artworkSaveTarget
+        if (uri != null && game != null) viewModel.saveArtwork(game, uri)
+        artworkSaveTarget = null
     }
     val backupPicker = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
         uri?.let(viewModel::exportBackup)
@@ -185,6 +191,10 @@ fun BridgeApp(viewModel: BridgeViewModel) {
                         localArtworkTarget = it
                         localArtworkPicker.launch(arrayOf("image/*"))
                     },
+                    onSaveArtwork = {
+                        artworkSaveTarget = it
+                        artworkSavePicker.launch(suggestedArtworkFilename(it))
+                    },
                     onDelete = { deleteTarget = it },
                 )
                 BridgeTab.SETTINGS -> SettingsScreen(
@@ -240,6 +250,7 @@ private fun LibraryScreen(
     onRelinkAzahar: (GameEntryEntity) -> Unit,
     onSearchArtwork: (GameEntryEntity) -> Unit,
     onLocalArtwork: (GameEntryEntity) -> Unit,
+    onSaveArtwork: (GameEntryEntity) -> Unit,
     onDelete: (GameEntryEntity) -> Unit,
 ) {
     Column(Modifier.fillMaxSize()) {
@@ -277,7 +288,7 @@ private fun LibraryScreen(
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
                 items(games, key = GameEntryEntity::id) { game ->
-                    GameCard(game, onLaunch, onCopy, onRelinkAzahar, onSearchArtwork, onLocalArtwork, onDelete)
+                    GameCard(game, onLaunch, onCopy, onRelinkAzahar, onSearchArtwork, onLocalArtwork, onSaveArtwork, onDelete)
                 }
             }
         }
@@ -292,6 +303,7 @@ private fun GameCard(
     onRelinkAzahar: (GameEntryEntity) -> Unit,
     onSearchArtwork: (GameEntryEntity) -> Unit,
     onLocalArtwork: (GameEntryEntity) -> Unit,
+    onSaveArtwork: (GameEntryEntity) -> Unit,
     onDelete: (GameEntryEntity) -> Unit,
 ) {
     Card(
@@ -326,6 +338,11 @@ private fun GameCard(
                     Icon(Icons.Default.FolderOpen, null); Spacer(Modifier.size(8.dp)); Text("Choose ROM")
                 }
             }
+            if (game.artworkUri != null) {
+                OutlinedButton(onClick = { onSaveArtwork(game) }, modifier = Modifier.fillMaxWidth()) {
+                    Icon(Icons.Default.Download, null); Spacer(Modifier.size(8.dp)); Text("Save box art")
+                }
+            }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 IconButton(onClick = { onCopy(game) }) { Icon(Icons.Default.ContentCopy, "Copy MCON link") }
                 IconButton(onClick = { onSearchArtwork(game) }) { Icon(Icons.Default.ImageSearch, "Search box art") }
@@ -334,6 +351,20 @@ private fun GameCard(
             }
         }
     }
+}
+
+internal fun suggestedArtworkFilename(game: GameEntryEntity): String {
+    val extension = game.artworkUri
+        ?.substringAfterLast('.', "")
+        ?.lowercase()
+        ?.takeIf { it in setOf("png", "jpg", "jpeg", "webp", "gif") }
+        ?: "jpg"
+    val safeTitle = game.title
+        .replace(Regex("[\\\\/:*?\"<>|\\u0000-\\u001F]"), "_")
+        .trim(' ', '.')
+        .take(120)
+        .ifBlank { "game" }
+    return "$safeTitle-box-art.$extension"
 }
 
 @Composable

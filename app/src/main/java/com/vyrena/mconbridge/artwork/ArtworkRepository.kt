@@ -61,6 +61,11 @@ class ArtworkRepository(
         updated
     }
 
+    suspend fun saveToDevice(game: GameEntryEntity, destination: Uri): Result<Long> = runCatching {
+        val artworkUri = game.artworkUri ?: error("Choose box art before saving it")
+        cache.saveToDevice(artworkUri, destination)
+    }
+
     suspend fun prune(limitMb: Int): Long {
         val protectedUris = bridgeRepository.getGames().mapNotNull(GameEntryEntity::artworkUri).toSet()
         return cache.prune(limitMb, protectedUris)

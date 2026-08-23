@@ -20,6 +20,8 @@ saves or modifies game folders.
   or of a single game folder selected with Android's system folder picker.
 - Stable per-game launch links, backup/restore, local cover selection, and
   online cover search through GameTDB and SteamGridDB.
+- Save any selected cover to a user-chosen device folder for manual selection
+  in launchers that do not consume the bridge's shared artwork URI.
 - MCON-targeted bulk sharing when MCON advertises the public bridge MIME type,
   with a share-sheet and copy-link fallback when it does not.
 
