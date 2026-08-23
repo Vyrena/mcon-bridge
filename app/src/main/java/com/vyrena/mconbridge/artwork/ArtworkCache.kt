@@ -2,6 +2,7 @@ package com.vyrena.mconbridge.artwork
 
 import android.content.ContentResolver
 import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.core.net.toUri
@@ -10,6 +11,7 @@ import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
+import java.io.FilterOutputStream
 import java.io.FileOutputStream
 import java.io.InputStream
 import java.security.MessageDigest
@@ -51,11 +53,38 @@ class ArtworkCache(
             "Artwork is missing from the verified cache"
         }
         require(source.length() in 1..MAX_BYTES) { "Artwork file size is invalid" }
-        val output = resolver.openOutputStream(destination, "wt") ?: error("Unable to create the artwork file")
-        output.use { destinationStream ->
-            source.inputStream().use { sourceStream -> sourceStream.copyTo(destinationStream) }
+
+        val bitmap = decodeForExport(source)
+        var bytesWritten = 0L
+        try {
+            val output = resolver.openOutputStream(destination, "wt") ?: error("Unable to create the artwork file")
+            object : FilterOutputStream(output) {
+                override fun write(value: Int) {
+                    out.write(value)
+                    bytesWritten++
+                }
+
+                override fun write(buffer: ByteArray, offset: Int, length: Int) {
+                    out.write(buffer, offset, length)
+                    bytesWritten += length
+                }
+            }.use { destinationStream ->
+                require(bitmap.compress(Bitmap.CompressFormat.PNG, 100, destinationStream)) {
+                    "Unable to encode the artwork as PNG"
+                }
+            }
+        } finally {
+            bitmap.recycle()
         }
-        source.length()
+
+        val exportedBounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        resolver.openInputStream(destination)?.use { BitmapFactory.decodeStream(it, null, exportedBounds) }
+            ?: error("Unable to verify the saved artwork")
+        require(exportedBounds.outWidth > 0 && exportedBounds.outHeight > 0 && exportedBounds.outMimeType == "image/png") {
+            "Saved artwork could not be verified as PNG"
+        }
+        require(bytesWritten > 0) { "Saved artwork is empty" }
+        bytesWritten
     }
 
     suspend fun prune(limitMb: Int, protectedUris: Set<String>): Long = withContext(Dispatchers.IO) {
@@ -76,6 +105,23 @@ class ArtworkCache(
     }
 
     fun sizeBytes(): Long = directory.listFiles().orEmpty().sumOf(File::length)
+
+    private fun decodeForExport(source: File): Bitmap {
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeFile(source.path, bounds)
+        require(bounds.outWidth > 0 && bounds.outHeight > 0) { "Cached artwork could not be decoded" }
+
+        var sampleSize = 1
+        while (bounds.outWidth / sampleSize > MAX_EXPORT_DIMENSION ||
+            bounds.outHeight / sampleSize > MAX_EXPORT_DIMENSION
+        ) {
+            sampleSize *= 2
+        }
+        return BitmapFactory.decodeFile(
+            source.path,
+            BitmapFactory.Options().apply { inSampleSize = sampleSize },
+        ) ?: error("Cached artwork could not be decoded")
+    }
 
     private fun storeVerified(input: InputStream, contentType: String): File {
         val temporary = File.createTempFile("incoming-", ".part", directory)
@@ -114,6 +160,7 @@ class ArtworkCache(
     companion object {
         private const val MAX_BYTES = 10L * 1024 * 1024
         private const val MAX_DIMENSION = 8192
+        private const val MAX_EXPORT_DIMENSION = 2048
         private val EXTENSIONS = mapOf(
             "image/png" to "png",
             "image/jpeg" to "jpg",

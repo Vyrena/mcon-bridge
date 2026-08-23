@@ -125,7 +125,7 @@ fun BridgeApp(viewModel: BridgeViewModel) {
         if (uri != null && game != null) viewModel.applyLocalArtwork(game, uri)
         localArtworkTarget = null
     }
-    val artworkSavePicker = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("image/*")) { uri ->
+    val artworkSavePicker = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("image/png")) { uri ->
         val game = artworkSaveTarget
         if (uri != null && game != null) viewModel.saveArtwork(game, uri)
         artworkSaveTarget = null
@@ -355,17 +355,12 @@ private fun GameCard(
 }
 
 internal fun suggestedArtworkFilename(game: GameEntryEntity): String {
-    val extension = game.artworkUri
-        ?.substringAfterLast('.', "")
-        ?.lowercase()
-        ?.takeIf { it in setOf("png", "jpg", "jpeg", "webp", "gif") }
-        ?: "jpg"
     val safeTitle = game.title
         .replace(Regex("[\\\\/:*?\"<>|\\u0000-\\u001F]"), "_")
         .trim(' ', '.')
         .take(120)
         .ifBlank { "game" }
-    return "$safeTitle-box-art.$extension"
+    return "$safeTitle-box-art.png"
 }
 
 @Composable

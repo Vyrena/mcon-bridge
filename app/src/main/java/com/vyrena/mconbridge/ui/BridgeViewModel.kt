@@ -171,7 +171,7 @@ class BridgeViewModel(application: Application) : AndroidViewModel(application) 
 
     fun saveArtwork(game: GameEntryEntity, uri: Uri) = runBusy("Saving box art") {
         container.artworkRepository.saveToDevice(game, uri).fold(
-            onSuccess = { emit("Saved box art for ${game.title}; select that file in MCON") },
+            onSuccess = { emit("Saved compatible PNG for ${game.title}; select that file in MCON") },
             onFailure = { emit(it.message ?: "Unable to save box art") },
         )
     }
