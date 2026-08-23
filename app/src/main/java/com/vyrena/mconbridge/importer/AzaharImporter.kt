@@ -18,6 +18,8 @@ data class AzaharExport(val schema: Int, val games: List<AzaharExportGame>)
 data class AzaharExportGame(
     val title: String,
     val titleId: String,
+    val productCode: String? = null,
+    val region: String? = null,
     val artworkUri: String? = null,
 )
 
@@ -42,7 +44,11 @@ class AzaharImporter(
                 title = game.title,
                 source = SourceType.AZAHAR,
                 sourceKey = normalizedId,
-                payload = AzaharPayload(normalizedId),
+                payload = AzaharPayload(
+                    titleId = normalizedId,
+                    productCode = game.productCode?.uppercase(),
+                    region = game.region?.uppercase(),
+                ),
                 artworkUri = game.artworkUri,
             )
         }

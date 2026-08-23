@@ -9,7 +9,11 @@ sealed interface LaunchPayload
 
 @Serializable
 @SerialName("azahar")
-data class AzaharPayload(val titleId: String) : LaunchPayload
+data class AzaharPayload(
+    val titleId: String,
+    val productCode: String? = null,
+    val region: String? = null,
+) : LaunchPayload
 
 @Serializable
 @SerialName("artemis")
